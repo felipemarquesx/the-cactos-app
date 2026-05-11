@@ -1,0 +1,2 @@
+# the-cactos-app
+Repositório destinado ao desenvolvimento do aplicativo móvel do The Cactos Restaurant. Construído com foco em escalabilidade e performance, utilizando React Native e Expo. O sistema contempla o fluxo completo de pedidos, gerenciamento de perfil e notificações em tempo real.
