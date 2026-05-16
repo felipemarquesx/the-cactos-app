@@ -1,98 +1,100 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { ImageBackground, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+// Nosso mini-dicionário de cores (Vamos deixar aqui por enquanto para facilitar)
+const colors = {
+  background: '#efe2d0', 
+  textDark: '#3B4A3F', 
+  click: '#ac5d21', 
+  textB: '#efe2d0'
+};
 
 export default function HomeScreen() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <ImageBackground 
+      source={require('../../assets/images/loginBack.png')}
+      style={styles.container}
+    >
+      
+      <Text style={styles.label}>E-mail ou Usuário</Text>    
+      <TextInput
+        style={styles.inputPadrao}
+        placeholder='Digite seu E-mail ou Usuário'
+        keyboardType='email-address'
+      />
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      <Text style={styles.label}>Senha</Text>
+      <TextInput 
+        style={styles.inputSenha}
+        placeholder='Digite sua senha'
+        secureTextEntry={true}
+        keyboardType='default'
+      />
+
+      <TouchableOpacity style={styles.botao}>
+        <Text style={styles.boTex}>ENTRAR</Text>
+      </TouchableOpacity> 
+
+      <Text style={styles.textlink}>Esqueceu sua senha?</Text>
+      <Text style={styles.textlink}>Criar Nova Conta</Text>
+
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  
+  container: {
+    flex: 1, // Puxando a cor creme
     alignItems: 'center',
-    gap: 8,
+    paddingTop: 400,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: colors.textDark},
+  
+  inputPadrao: {
+    width: '75%',
+    borderWidth: 2,
+    borderColor: colors.textDark,
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 20,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  inputSenha: {
+    width: '75%',
+    borderWidth: 2,
+    borderColor: colors.textDark,
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 20,
   },
+  label:{
+    width: '75%',
+    marginBottom: 3,
+    textAlign: 'left',
+    marginLeft: 20,
+  }
+  ,
+  botao:{
+    width: '75%',
+    borderWidth: 2,
+    padding:15,
+    borderRadius: 8,
+    backgroundColor: colors.click,
+    borderColor: colors.click,
+    marginBottom: 6
+  }
+  ,
+  boTex:{
+    textAlign: 'center',
+    fontSize: 15,
+    color: colors.textB
+    
+  },
+  textlink:{
+    color: colors.click,
+    padding: 4
+  }
+
 });
