@@ -1,57 +1,82 @@
-import { ImageBackground, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { Dimensions, Image, ImageBackground, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-// Nosso mini-dicionário de cores (Vamos deixar aqui por enquanto para facilitar)
 const colors = {
-  background: '#efe2d0', 
+  background: 'rgb(237,226,207)', 
   textDark: '#3B4A3F', 
   click: '#ac5d21', 
   textB: '#efe2d0'
 };
 
-export default function HomeScreen() {
+const tela = Dimensions.get("window");
+const { height: altura } = Dimensions.get('window');
+
+
+export default function LoginScreen() {
   return (
-    <ImageBackground 
-      source={require('../../assets/images/loginBack.png')}
-      style={styles.container}
-    >
-      
-      <Text style={styles.label}>E-mail ou Usuário</Text>    
-      <TextInput
-        style={styles.inputPadrao}
-        placeholder='Digite seu E-mail ou Usuário'
-        keyboardType='email-address'
-      />
+   <ScrollView style={{ backgroundColor: colors.textDark }} 
+     contentContainerStyle={{ flexGrow: 1 }}
+  showsVerticalScrollIndicator={false}>
+      <ImageBackground 
+        source={require('../../assets/images/loginBack.jpg')} 
+        style={[styles.container, { minHeight: tela.height }]} 
+      >
+        
+           
+        <View style={styles.caixaInput}>
+          <Feather name="user" size={20} color={colors.textDark} />
+          <TextInput
+            style={styles.inputTexto}
+            placeholder='Digite seu E-mail ou Usuário'
+            keyboardType='email-address'
+            autoCapitalize="none"
+          />
+        </View>
 
-      <Text style={styles.label}>Senha</Text>
-      <TextInput 
-        style={styles.inputSenha}
-        placeholder='Digite sua senha'
-        secureTextEntry={true}
-        keyboardType='default'
-      />
+       <View style={styles.caixaInput}>
+          <Feather name="lock" size={20} color={colors.textDark} />
+          <TextInput 
+            style={styles.inputTexto}
+            placeholder='Digite sua senha'
+            secureTextEntry={true}
+            keyboardType='default'
+            autoCapitalize="none"
+          />
+        </View>
+         
+        <TouchableOpacity style={styles.botao} onPress={()=>router.push('/home')}>
+          <Text style={styles.boTex}>ENTRAR</Text>
+        </TouchableOpacity> 
 
-      <TouchableOpacity style={styles.botao}>
-        <Text style={styles.boTex}>ENTRAR</Text>
-      </TouchableOpacity> 
-
-      <Text style={styles.textlink}>Esqueceu sua senha?</Text>
-      <Text style={styles.textlink}>Criar Nova Conta</Text>
-
-    </ImageBackground>
-  );
-}
+        <Text style={styles.textlink}>Esqueceu sua senha?</Text>
+        <Text style={styles.textlink}>Criar Nova Conta</Text>
+        <View style={styles.rodape}><Image source = {require('../../assets/images/final.png')} style={styles.img}/></View>
+     </ImageBackground>
+    </ScrollView>
+  )};
 
 const styles = StyleSheet.create({
+ rodape: {
+  flex: 1,                
+  justifyContent: 'flex-end',
+  alignItems: 'center',
+  paddingBottom: 20,
+},
+
+  img:{width: 190,
+      height: 50,
+      marginTop:80
+      
+  },
+  
   
   container: {
-    flex: 1, // Puxando a cor creme
+    
+    
     alignItems: 'center',
-    paddingTop: 400,
+    paddingTop: altura*0.46,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: colors.textDark},
   
   inputPadrao: {
     width: '75%',
@@ -73,28 +98,43 @@ const styles = StyleSheet.create({
     width: '75%',
     marginBottom: 3,
     textAlign: 'left',
-    marginLeft: 20,
-  }
-  ,
+    marginLeft: '5%',
+    color: colors.click
+  
+  },
   botao:{
     width: '75%',
     borderWidth: 2,
-    padding:15,
+    padding: 15,
     borderRadius: 8,
     backgroundColor: colors.click,
     borderColor: colors.click,
-    marginBottom: 6
-  }
-  ,
+    marginBottom: 23
+  },
   boTex:{
     textAlign: 'center',
     fontSize: 15,
-    color: colors.textB
-    
+    color: colors.textB    
   },
   textlink:{
     color: colors.click,
-    padding: 4
-  }
-
+    padding: 4,
+  
+  },
+  caixaInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '75%', 
+    borderWidth: 2,
+    borderColor: colors.textDark,
+    borderRadius: 8,
+    paddingHorizontal: 15, 
+    marginBottom: 20,
+  },
+  inputTexto: {
+    flex: 1, 
+    paddingVertical: 15, 
+    marginLeft: 10, 
+    color: colors.textDark,
+  },
 });
