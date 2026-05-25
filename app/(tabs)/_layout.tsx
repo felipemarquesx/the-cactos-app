@@ -1,35 +1,45 @@
+import { Feather } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <Tabs
-      screenOptions={{tabBarStyle: { display: 'none' },
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
+    <Tabs screenOptions={{
+      headerShown: false, tabBarActiveTintColor: '#ac5d21', tabBarInactiveTintColor: '#3B4A3F',
+      tabBarStyle: { backgroundColor: '#e4e2e1', borderTopWidth: 2, height: 60 }, tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginBottom: 10 },
+    }}>
+
+
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'HOME',
+          tabBarIcon: ({ color, size }) => <Feather name="home" size={size} color={color} />,
+        }}
+      />
+
+
+      <Tabs.Screen
+        name="cardapio"
+        options={{
+          title: 'CARDÁPIO',
+          tabBarIcon: ({ color, size }) => <Feather name="menu" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="reserva"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'RESERVA',
+          tabBarIcon: ({ color, size }) => <Feather name="calendar" size={size} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="user"
+        options={{
+          title: 'PERFIL',
+          tabBarIcon: ({ color, size }) => <Feather name="user" size={size} color={color} />,
+        }}
+      />
+
     </Tabs>
   );
 }

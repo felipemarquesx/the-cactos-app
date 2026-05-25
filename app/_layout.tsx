@@ -11,8 +11,8 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
-        {/* Força o app a carregar direto a sua tela principal, sem passar por abas */}
         <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
