@@ -4,8 +4,8 @@ import React from 'react';
 export default function TabLayout() {
   return (
     <Tabs screenOptions={{
-      headerShown: false, tabBarActiveTintColor: '#ac5d21', tabBarInactiveTintColor: '#3B4A3F',
-      tabBarStyle: { backgroundColor: '#e4e2e1', borderTopWidth: 2, height: 60 }, tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginBottom: 10 },
+      headerShown: false, tabBarActiveTintColor: '#eed1ba', tabBarInactiveTintColor: '#102015',
+      tabBarStyle: { backgroundColor: '#3B4A3F', height: 65 }, tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginBottom: 15 },
     }}>
 
 

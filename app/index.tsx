@@ -1,6 +1,22 @@
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { Dimensions, Image, ImageBackground, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { useState } from 'react';
+import {
+  Dimensions,
+  Image,
+  ImageBackground,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { auth, db } from '../firebaseConfig';
 
 const colors = {
   background: 'rgb(237,226,207)',
@@ -12,50 +28,141 @@ const colors = {
 const tela = Dimensions.get("window");
 const { height: altura } = Dimensions.get('window');
 
-
 export default function LoginScreen() {
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+  const [nome, setNome] = useState('');
+  const [carregando, setCarregando] = useState(false);
+
+  // Controla se a tela está no modo Login (false) ou Cadastro (true)
+  const [isCadastro, setIsCadastro] = useState(false);
+
+  const router = useRouter();
+
+  const handleLogin = async () => {
+    if (!email || !senha) return alert('Preencha todos os campos!');
+
+    try {
+      setCarregando(true);
+      await signInWithEmailAndPassword(auth, email, senha);
+      router.replace('/(tabs)/home');
+    } catch (error: any) {
+      alert('Erro ao logar: ' + error.message);
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  const handleCadastro = async () => {
+    if (!nome || !email || !senha) return alert('Preencha todos os campos!');
+
+    try {
+      setCarregando(true);
+
+      // 1. Cria a conta no Firebase Auth
+      const credencial = await createUserWithEmailAndPassword(auth, email, senha);
+      const usuarioApp = credencial.user;
+
+      // 2. Cria o documento do Perfil no Banco de Dados (Firestore)
+      await setDoc(doc(db, "usuarios", usuarioApp.uid), {
+        nome: nome,
+        nivel: "Semente",
+        pontos: 0,
+        visitasTotais: 0,
+        pratoMaisPedido: "Nenhum ainda"
+      });
+
+      alert('Conta criada com sucesso!');
+      router.replace('/(tabs)/home');
+    } catch (error: any) {
+      alert('Erro ao cadastrar: ' + error.message);
+    } finally {
+      setCarregando(false);
+    }
+  };
+
   return (
-    <ScrollView style={{ backgroundColor: colors.textDark }}
-      contentContainerStyle={{ flexGrow: 1 }}
-      showsVerticalScrollIndicator={false}>
-      <ImageBackground
-        source={require('../assets/images/loginBack.jpg')}
-        style={[styles.container, { minHeight: tela.height }]}
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: colors.textDark }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
+        <ImageBackground
+          source={require('../assets/images/loginBack.jpg')}
+          style={[styles.container, { minHeight: tela.height }]}
+        >
 
+          {/* MODO CADASTRO: Exibe o campo de Nome dinamicamente */}
+          {isCadastro && (
+            <View style={styles.caixaInput}>
+              <Feather name="edit-3" size={20} color={colors.textDark} />
+              <TextInput
+                style={styles.inputTexto}
+                placeholder='Digite seu Nome'
+                autoCapitalize="words"
+                value={nome}
+                onChangeText={setNome}
+              />
+            </View>
+          )}
 
-        <View style={styles.caixaInput}>
-          <Feather name="user" size={20} color={colors.textDark} />
-          <TextInput
-            style={styles.inputTexto}
-            placeholder='Digite seu E-mail ou Usuário'
-            keyboardType='email-address'
-            autoCapitalize="none"
-          />
-        </View>
+          {/* MODO LOGIN E CADASTRO: Exibe E-mail e Senha */}
+          <View style={styles.caixaInput}>
+            <Feather name="user" size={20} color={colors.textDark} />
+            <TextInput
+              style={styles.inputTexto}
+              placeholder='Digite seu E-mail'
+              keyboardType='email-address'
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+            />
+          </View>
 
-        <View style={styles.caixaInput}>
-          <Feather name="lock" size={20} color={colors.textDark} />
-          <TextInput
-            style={styles.inputTexto}
-            placeholder='Digite sua senha'
-            secureTextEntry={true}
-            keyboardType='default'
-            autoCapitalize="none"
-          />
-        </View>
+          <View style={styles.caixaInput}>
+            <Feather name="lock" size={20} color={colors.textDark} />
+            <TextInput
+              style={styles.inputTexto}
+              placeholder='Digite sua senha'
+              secureTextEntry={true}
+              autoCapitalize="none"
+              value={senha}
+              onChangeText={setSenha}
+            />
+          </View>
 
-        <TouchableOpacity style={styles.botao} onPress={() => router.push('/(tabs)/home')}>
-          <Text style={styles.boTex}>ENTRAR</Text>
-        </TouchableOpacity>
+          {/* Botão Principal dinâmico (Entrar ou Concluir) */}
+          <TouchableOpacity
+            style={styles.botao}
+            onPress={isCadastro ? handleCadastro : handleLogin}
+            disabled={carregando}
+          >
+            <Text style={styles.boTex}>
+              {carregando ? 'AGUARDE...' : (isCadastro ? 'CONCLUIR' : 'ENTRAR')}
+            </Text>
+          </TouchableOpacity>
 
-        <Text style={styles.textlink}>Esqueceu sua senha?</Text>
-        <Text style={styles.textlink}>Criar Nova Conta</Text>
-        <View style={styles.rodape}><Image source={require('../assets/images/final.png')} style={styles.img} /></View>
-      </ImageBackground>
-    </ScrollView>
-  )
-};
+          {!isCadastro && <Text style={styles.textlink}>Esqueceu sua senha?</Text>}
+
+          {/* Alternador de Modos (Ir para Cadastro ou Voltar para Login) */}
+          <TouchableOpacity onPress={() => setIsCadastro(!isCadastro)}>
+            <Text style={styles.textlink}>
+              {isCadastro ? 'Já tenho conta. Fazer Login' : 'Criar Nova Conta'}
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.rodape}>
+            <Image source={require('../assets/images/final.png')} style={styles.img} />
+          </View>
+        </ImageBackground>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
 
 const styles = StyleSheet.create({
   rodape: {
@@ -64,45 +171,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 20,
   },
-
   img: {
     width: 190,
     height: 50,
     marginTop: 80
-
   },
-
-
   container: {
-
-
     alignItems: 'center',
     paddingTop: altura * 0.46,
-  },
-
-  inputPadrao: {
-    width: '75%',
-    borderWidth: 2,
-    borderColor: colors.textDark,
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 20,
-  },
-  inputSenha: {
-    width: '75%',
-    borderWidth: 2,
-    borderColor: colors.textDark,
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 20,
-  },
-  label: {
-    width: '75%',
-    marginBottom: 3,
-    textAlign: 'left',
-    marginLeft: '5%',
-    color: colors.click
-
   },
   botao: {
     width: '75%',
@@ -116,12 +192,13 @@ const styles = StyleSheet.create({
   boTex: {
     textAlign: 'center',
     fontSize: 15,
-    color: colors.textB
+    color: colors.textB,
+    fontWeight: 'bold'
   },
   textlink: {
     color: colors.click,
     padding: 4,
-
+    fontWeight: 'bold'
   },
   caixaInput: {
     flexDirection: 'row',
