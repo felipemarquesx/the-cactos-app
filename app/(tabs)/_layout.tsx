@@ -26,7 +26,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="pedidos"
+        options={{
+          title: 'PEDIDOS',
+          tabBarIcon: ({ color, size }) => <Feather name="shopping-bag" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="reserva"
+
         options={{
           title: 'RESERVA',
           tabBarIcon: ({ color, size }) => <Feather name="calendar" size={size} color={color} />,

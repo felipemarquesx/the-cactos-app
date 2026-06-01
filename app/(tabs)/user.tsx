@@ -192,7 +192,7 @@ export default function PerfilScreen() {
                 <View style={styles.menuContainer}>
                     <Text style={styles.menuTitulo}>Minha Conta</Text>
 
-                    <TouchableOpacity style={styles.menuItem}>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/meus-dados')}>
                         <View style={styles.menuItemLeft}>
                             <Text style={styles.menuIcone}>⚙️</Text>
                             <Text style={styles.menuTexto}>Meus Dados</Text>
@@ -200,13 +200,15 @@ export default function PerfilScreen() {
                         <Text style={styles.menuSeta}>›</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.menuItem}>
+
+                    <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/historico')}>
                         <View style={styles.menuItemLeft}>
                             <Text style={styles.menuIcone}>🕒</Text>
                             <Text style={styles.menuTexto}>Histórico de Visitas e Reservas</Text>
                         </View>
                         <Text style={styles.menuSeta}>›</Text>
                     </TouchableOpacity>
+
 
                     <TouchableOpacity style={styles.menuItem}>
                         <View style={styles.menuItemLeft}>
