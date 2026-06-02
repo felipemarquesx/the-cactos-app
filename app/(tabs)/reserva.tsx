@@ -1,3 +1,5 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -14,7 +16,6 @@ import {
     View
 } from 'react-native';
 import { auth, db } from '../../firebaseConfig';
-import { collection, addDoc, query, where, getDocs, orderBy, doc, deleteDoc } from 'firebase/firestore';
 
 const { width: largura, height: altura } = Dimensions.get('window');
 
@@ -107,8 +108,12 @@ export default function ReservasScreen() {
                 const agora = Date.now();
                 setReservasAtivas(data.filter(r => r.timestamp >= agora));
                 setLoading(false);
-            } catch (error) {
-                console.error("Erro ao buscar reservas:", error);
+            } catch (error: any) {
+                console.error("Erro ao buscar reservas do Firebase:", error);
+                // Se o erro for por falta de Índice Composto, avisamos de forma clara!
+                if (error.message && error.message.includes('index')) {
+                    console.warn("⚠️ AVISO: Você precisa criar um Índice Composto no Firebase combinando 'userId' e 'timestamp'. O Firebase gerou um link logo acima neste terminal para você criar automaticamente!");
+                }
                 // Fallback para mock se o banco estiver vazio ou der erro na primeira vez
                 setReservasAtivas(MOCK_RESERVAS.filter(r => r.timestamp >= Date.now()));
                 setLoading(false);
@@ -139,7 +144,7 @@ export default function ReservasScreen() {
             };
 
             const docRef = await addDoc(collection(db, 'reservas'), novaReserva);
-            
+
             setReservasAtivas([...reservasAtivas, { id: docRef.id, ...novaReserva } as Reserva]);
             setModalVisivel(false);
             setDataStr('');
@@ -151,13 +156,13 @@ export default function ReservasScreen() {
     };
 
     const cancelarReserva = async (id: string) => {
-      try {
-        await deleteDoc(doc(db, 'reservas', id));
-        setReservasAtivas(prev => prev.filter(r => r.id !== id));
-        alert('Reserva cancelada.');
-      } catch (error) {
-        console.error(error);
-      }
+        try {
+            await deleteDoc(doc(db, 'reservas', id));
+            setReservasAtivas(prev => prev.filter(r => r.id !== id));
+            alert('Reserva cancelada.');
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     // Componente do Card de "Nova Reserva" (Fica no topo da lista)
@@ -190,7 +195,7 @@ export default function ReservasScreen() {
             <View style={styles.cardReserva}>
                 <View style={styles.cardTopo}>
                     <View style={styles.dataArea}>
-                        <Text style={styles.dataIcone}>📅</Text>
+                        <MaterialCommunityIcons name="calendar-month-outline" size={24} color={colors.accent} style={styles.dataIcone} />
                         <View>
                             <Text style={styles.dataTexto}>{item.dataTexto}</Text>
                             <Text style={styles.horaTexto}>{item.horaTexto}</Text>
@@ -212,7 +217,7 @@ export default function ReservasScreen() {
 
                 <View style={styles.cardRodape}>
                     <View style={styles.infoRow}>
-                        <Text style={styles.infoIcone}>👥</Text>
+                        <MaterialCommunityIcons name="account-group-outline" size={20} color={colors.textDark} style={styles.infoIcone} />
                         <Text style={styles.infoTexto}>{item.pessoas} {item.pessoas === 1 ? 'Pessoa' : 'Pessoas'}</Text>
                     </View>
 
@@ -244,7 +249,7 @@ export default function ReservasScreen() {
                     contentContainerStyle={styles.listaContainer}
                     ListEmptyComponent={
                         <View style={styles.emptyArea}>
-                            <Text style={styles.emptyIcon}>🍽️</Text>
+                            <MaterialCommunityIcons name="silverware-fork-knife" size={48} color={colors.muted} style={{ marginBottom: 16 }} />
                             <Text style={styles.emptyTitle}>Nenhuma reserva ativa</Text>
                             <Text style={styles.emptyText}>Você não tem mesas reservadas para os próximos dias.</Text>
                         </View>

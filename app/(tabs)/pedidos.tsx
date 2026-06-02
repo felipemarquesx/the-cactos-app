@@ -1,5 +1,8 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { addDoc, collection, doc, increment, updateDoc } from 'firebase/firestore';
 import React from 'react';
 import {
+  Dimensions,
   FlatList,
   Image,
   SafeAreaView,
@@ -7,12 +10,10 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
-  Dimensions
+  View
 } from 'react-native';
 import { useCart } from '../../context/CartContext';
 import { auth, db } from '../../firebaseConfig';
-import { doc, getDoc, updateDoc, increment, collection, addDoc } from 'firebase/firestore';
 
 const { height: altura } = Dimensions.get('window');
 
@@ -37,7 +38,7 @@ export default function PedidosScreen() {
         <Text style={styles.preco}>R$ {(item.preco * item.quantidade).toFixed(2)}</Text>
       </View>
       <TouchableOpacity onPress={() => removerProduto(item.id)} style={styles.btnRemover}>
-        <Text style={styles.btnRemoverText}>🗑️</Text>
+        <MaterialCommunityIcons name="trash-can-outline" size={24} color={colors.accent} />
       </TouchableOpacity>
     </View>
   );

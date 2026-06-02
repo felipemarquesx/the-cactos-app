@@ -15,6 +15,8 @@ import {
 } from 'react-native';
 
 // Importações do Firebase
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../../firebaseConfig';
 
@@ -78,12 +80,12 @@ const MOCK_DESTAQUES: Destaque[] = [
 ];
 
 const MOCK_CATEGORIAS: Categoria[] = [
-  { id: '1', nome: 'Carnes', icone: '🐄', ordem: 1 },
-  { id: '2', nome: 'Peixes', icone: '🐟', ordem: 2 },
-  { id: '3', nome: 'Vegetariano', icone: '🌵', ordem: 3 },
-  { id: '4', nome: 'Bebidas', icone: '🍶', ordem: 4 },
-  { id: '5', nome: 'Sobremesas', icone: '🧁', ordem: 5 },
-  { id: '6', nome: 'Lanches', icone: '🍔', ordem: 6 },
+  { id: 'carnes', nome: 'Carnes', icone: 'food-steak', ordem: 1 },
+  { id: 'peixes', nome: 'Peixes', icone: 'fish', ordem: 2 },
+  { id: 'vegetariano', nome: 'Vegetariano', icone: 'leaf', ordem: 3 },
+  { id: 'bebidas', nome: 'Bebidas', icone: 'glass-cocktail', ordem: 4 },
+  { id: 'sobremesas', nome: 'Sobremesas', icone: 'cupcake', ordem: 5 },
+  { id: 'lanches', nome: 'Lanches', icone: 'hamburger', ordem: 6 },
 ];
 
 const MOCK_UNIDADES: Unidade[] = [
@@ -111,6 +113,8 @@ export default function HomeScreen() {
 
   // Estado para guardar o nome real do usuário
   const [nomeUsuarioReal, setNomeUsuarioReal] = useState('Visitante');
+
+  const router = useRouter();
 
   // useEffect que busca o nome assim que a tela abre
   useEffect(() => {
@@ -179,7 +183,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.buscaContainer}>
-          <Text style={styles.buscaIcone}>🔍</Text>
+          <MaterialCommunityIcons name="magnify" size={20} color={colors.muted} style={styles.buscaIcone} />
           <TextInput
             style={styles.buscaInput}
             placeholder="Buscar pratos ou ingredientes..."
@@ -223,8 +227,14 @@ export default function HomeScreen() {
               key={cat.id}
               style={styles.categoriaItem}
               activeOpacity={0.75}
+              onPress={() => router.push({ pathname: '/(tabs)/cardapio', params: { categoria: cat.id } })}
             >
-              <Text style={styles.categoriaIcone}>{cat.icone}</Text>
+              <MaterialCommunityIcons
+                name={cat.icone as any}
+                size={28}
+                color={colors.accent}
+                style={styles.categoriaIcone}
+              />
               <Text style={styles.categoriaNome}>{cat.nome}</Text>
             </TouchableOpacity>
           ))}
@@ -235,11 +245,14 @@ export default function HomeScreen() {
           {unidades.map(u => (
             <TouchableOpacity key={u.id} style={styles.unidadeCard} activeOpacity={0.85}>
               <View style={styles.mapPlaceholder}>
-                <Text style={styles.mapEmoji}>🗺️</Text>
+                <MaterialCommunityIcons name="map-marker-outline" size={32} color={colors.textDark} />
               </View>
               <View style={styles.unidadeInfo}>
                 <Text style={styles.unidadeNome}>{u.nome}</Text>
-                <Text style={styles.unidadeEndereco}>📍 {u.endereco}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <MaterialCommunityIcons name="map-marker" size={14} color={colors.muted} style={{ marginRight: 4 }} />
+                  <Text style={styles.unidadeEndereco}>{u.endereco}</Text>
+                </View>
               </View>
             </TouchableOpacity>
           ))}

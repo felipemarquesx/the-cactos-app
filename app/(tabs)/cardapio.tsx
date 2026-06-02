@@ -1,3 +1,5 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 import { collection, getDocs } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
@@ -14,8 +16,8 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { db } from '../../firebaseConfig';
 import { useCart } from '../../context/CartContext';
+import { db } from '../../firebaseConfig';
 const { width: largura, height: altura } = Dimensions.get('window');
 
 
@@ -108,6 +110,7 @@ export default function CardapioScreen() {
   const [busca, setBusca] = useState('');
   const { adicionarProduto } = useCart();
 
+  const { categoria } = useLocalSearchParams();
 
   const [loading, setLoading] = useState(true);
 
@@ -151,6 +154,13 @@ export default function CardapioScreen() {
 
     fetchDadosFirebase();
   }, []);
+
+  // Atualiza a categoria ativa se vier um parâmetro de navegação (ex: clicado na Home)
+  useEffect(() => {
+    if (categoria) {
+      setCategoriaAtiva(categoria as string);
+    }
+  }, [categoria]);
 
 
   const produtosFiltrados = produtos.filter((p) => {
@@ -215,7 +225,7 @@ export default function CardapioScreen() {
         <Text style={styles.subTitulo}>Descubra os sabores do sertão ao litoral.</Text>
 
         <View style={styles.buscaContainer}>
-          <Text style={styles.buscaIcone}>🔍</Text>
+          <MaterialCommunityIcons name="magnify" size={20} color={colors.muted} style={styles.buscaIcone} />
           <TextInput
             style={styles.buscaInput}
             placeholder="Buscar pratos ou bebidas..."

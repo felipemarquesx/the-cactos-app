@@ -1,11 +1,13 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Dimensions,
     Image,
+    Modal,
     Platform,
     SafeAreaView,
     ScrollView,
@@ -47,9 +49,22 @@ const colors = {
     danger: '#D9534F',
 };
 
+const AVATARES_DISPONIVEIS = [
+    'https://api.dicebear.com/7.x/avataaars/png?seed=Felix',
+    'https://api.dicebear.com/7.x/avataaars/png?seed=Aneka',
+    'https://api.dicebear.com/7.x/avataaars/png?seed=Mimi',
+    'https://api.dicebear.com/7.x/avataaars/png?seed=Jack',
+    'https://api.dicebear.com/7.x/avataaars/png?seed=Jude',
+    'https://api.dicebear.com/7.x/avataaars/png?seed=Coco',
+    'https://api.dicebear.com/7.x/avataaars/png?seed=Oliver',
+    'https://api.dicebear.com/7.x/avataaars/png?seed=Luna',
+    'https://api.dicebear.com/7.x/avataaars/png?seed=Jasper',
+];
+
 export default function PerfilScreen() {
     const [userData, setUserData] = useState<PerfilUsuario | null>(null);
     const [loading, setLoading] = useState(true);
+    const [modalAvatarVisivel, setModalAvatarVisivel] = useState(false);
     const router = useRouter();
 
 
@@ -112,6 +127,23 @@ export default function PerfilScreen() {
         }
     };
 
+    const handleSelecionarAvatar = async (url: string) => {
+        try {
+            const currentUser = auth.currentUser;
+            if (currentUser && userData) {
+                const userDocRef = doc(db, 'usuarios', currentUser.uid);
+                await updateDoc(userDocRef, {
+                    fotoUrl: url
+                });
+                setUserData({ ...userData, fotoUrl: url });
+                setModalAvatarVisivel(false);
+            }
+        } catch (error) {
+            console.error("Erro ao atualizar avatar:", error);
+            alert("Erro ao salvar o avatar. Tente novamente.");
+        }
+    };
+
 
     const progressoFidelidade = userData
         ? (userData.pontos / userData.proximoNivelPontos) * 100
@@ -139,16 +171,19 @@ export default function PerfilScreen() {
             >
 
                 <View style={styles.header}>
-                    <View style={styles.avatarContainer}>
+                    <TouchableOpacity
+                        style={styles.avatarContainer}
+                        onPress={() => setModalAvatarVisivel(true)}
+                        activeOpacity={0.8}
+                    >
                         {userData.fotoUrl ? (
                             <Image source={{ uri: userData.fotoUrl }} style={styles.avatar} />
                         ) : (
-                            <Text style={styles.avatarPlaceholder}>👤</Text>
+                            <View style={styles.avatarPlaceholder}>
+                                <MaterialCommunityIcons name="account" size={48} color={colors.muted} />
+                            </View>
                         )}
-                        <TouchableOpacity style={styles.btnEditarFoto}>
-                            <Text style={styles.iconeEditar}>✏️</Text>
-                        </TouchableOpacity>
-                    </View>
+                    </TouchableOpacity>
 
                     <Text style={styles.nomeUsuario}>{userData.nome}</Text>
                     <Text style={styles.emailUsuario}>{userData.email}</Text>
@@ -161,7 +196,7 @@ export default function PerfilScreen() {
                             <Text style={styles.fidelidadeTitulo}>Programa Cactos</Text>
                             <Text style={styles.nivelTexto}>{userData.nivel}</Text>
                         </View>
-                        <Text style={styles.iconeNivel}>🏆</Text>
+                        <MaterialCommunityIcons name="trophy" size={32} color={colors.star} />
                     </View>
 
                     <View style={styles.barraFundo}>
@@ -177,12 +212,12 @@ export default function PerfilScreen() {
 
                 <View style={styles.statsContainer}>
                     <View style={styles.statBox}>
-                        <Text style={styles.statIcone}>🍽️</Text>
+                        <MaterialCommunityIcons name="silverware-variant" size={24} color={colors.accent} style={{ marginBottom: 8 }} />
                         <Text style={styles.statTitulo}>Mais Pedido</Text>
                         <Text style={styles.statValor} numberOfLines={1}>{userData.pratoMaisPedido}</Text>
                     </View>
                     <View style={styles.statBox}>
-                        <Text style={styles.statIcone}>📅</Text>
+                        <MaterialCommunityIcons name="calendar-check" size={24} color={colors.accent} style={{ marginBottom: 8 }} />
                         <Text style={styles.statTitulo}>Visitas Totais</Text>
                         <Text style={styles.statValor}>{userData.visitasTotais}</Text>
                     </View>
@@ -194,7 +229,7 @@ export default function PerfilScreen() {
 
                     <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/meus-dados')}>
                         <View style={styles.menuItemLeft}>
-                            <Text style={styles.menuIcone}>⚙️</Text>
+                            <MaterialCommunityIcons name="cog" size={20} color={colors.textDark} style={styles.menuIcone} />
                             <Text style={styles.menuTexto}>Meus Dados</Text>
                         </View>
                         <Text style={styles.menuSeta}>›</Text>
@@ -203,7 +238,7 @@ export default function PerfilScreen() {
 
                     <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/historico')}>
                         <View style={styles.menuItemLeft}>
-                            <Text style={styles.menuIcone}>🕒</Text>
+                            <MaterialCommunityIcons name="clock-outline" size={20} color={colors.textDark} style={styles.menuIcone} />
                             <Text style={styles.menuTexto}>Histórico de Visitas e Reservas</Text>
                         </View>
                         <Text style={styles.menuSeta}>›</Text>
@@ -212,7 +247,7 @@ export default function PerfilScreen() {
 
                     <TouchableOpacity style={styles.menuItem}>
                         <View style={styles.menuItemLeft}>
-                            <Text style={styles.menuIcone}>💳</Text>
+                            <MaterialCommunityIcons name="credit-card-outline" size={20} color={colors.textDark} style={styles.menuIcone} />
                             <Text style={styles.menuTexto}>Métodos de Pagamento</Text>
                         </View>
                         <Text style={styles.menuSeta}>›</Text>
@@ -220,7 +255,7 @@ export default function PerfilScreen() {
 
                     <TouchableOpacity style={styles.menuItem}>
                         <View style={styles.menuItemLeft}>
-                            <Text style={styles.menuIcone}>🎟️</Text>
+                            <MaterialCommunityIcons name="ticket-percent-outline" size={20} color={colors.textDark} style={styles.menuIcone} />
                             <Text style={styles.menuTexto}>Meus Cupons</Text>
                         </View>
                         <Text style={styles.menuSeta}>›</Text>
@@ -233,6 +268,39 @@ export default function PerfilScreen() {
                 </TouchableOpacity>
 
             </ScrollView>
+
+            {/* Modal de Escolha de Avatar */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={modalAvatarVisivel}
+                onRequestClose={() => setModalAvatarVisivel(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitulo}>Escolha um Ícone</Text>
+
+                        <View style={styles.gridAvatares}>
+                            {AVATARES_DISPONIVEIS.map((url, index) => (
+                                <TouchableOpacity
+                                    key={index}
+                                    style={styles.avatarOpcao}
+                                    onPress={() => handleSelecionarAvatar(url)}
+                                >
+                                    <Image source={{ uri: url }} style={styles.avatarImagemOpcao} />
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        <TouchableOpacity
+                            style={styles.btnFecharModal}
+                            onPress={() => setModalAvatarVisivel(false)}
+                        >
+                            <Text style={styles.btnFecharTexto}>Cancelar</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -276,31 +344,60 @@ const styles = StyleSheet.create({
         height: 100,
         borderRadius: 50,
         backgroundColor: colors.border,
-        textAlign: 'center',
-        textAlignVertical: 'center',
-        fontSize: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
         overflow: 'hidden',
     },
-    btnEditarFoto: {
-        position: 'absolute',
-        bottom: 0,
-        right: 0,
-        backgroundColor: colors.card,
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        alignItems: 'center',
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        width: '85%',
+        backgroundColor: colors.card,
+        borderRadius: 20,
+        padding: 24,
+        alignItems: 'center',
+    },
+    modalTitulo: {
+        fontSize: 20,
+        fontWeight: '800',
+        color: colors.textDark,
+        marginBottom: 20,
+    },
+    gridAvatares: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        marginBottom: 24,
+    },
+    avatarOpcao: {
+        width: 70,
+        height: 70,
+        borderRadius: 35,
+        borderWidth: 2,
+        borderColor: colors.border,
+        overflow: 'hidden',
+        backgroundColor: colors.background,
+        margin: 8,
+    },
+    avatarImagemOpcao: {
+        width: '100%',
+        height: '100%',
+    },
+    btnFecharModal: {
+        paddingVertical: 12,
+        paddingHorizontal: 32,
+        borderRadius: 10,
         borderWidth: 1,
         borderColor: colors.border,
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        shadowOffset: { width: 0, height: 2 },
     },
-    iconeEditar: {
-        fontSize: 14,
+    btnFecharTexto: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: colors.muted,
     },
     nomeUsuario: {
         fontSize: 24,
