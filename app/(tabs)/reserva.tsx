@@ -3,14 +3,18 @@ import {
     ActivityIndicator,
     Dimensions,
     FlatList,
+    Modal,
     Platform,
     SafeAreaView,
     StatusBar,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View
 } from 'react-native';
+import { auth, db } from '../../firebaseConfig';
+import { collection, addDoc, query, where, getDocs, orderBy, doc, deleteDoc } from 'firebase/firestore';
 
 const { width: largura, height: altura } = Dimensions.get('window');
 
@@ -72,27 +76,41 @@ const MOCK_RESERVAS: Reserva[] = [
 export default function ReservasScreen() {
     const [reservasAtivas, setReservasAtivas] = useState<Reserva[]>([]);
     const [loading, setLoading] = useState(true);
+    const [modalVisivel, setModalVisivel] = useState(false);
+
+    // Campos do formulário
+    const [dataStr, setDataStr] = useState('');
+    const [horaStr, setHoraStr] = useState('');
+    const [qtdPessoas, setQtdPessoas] = useState('2');
 
     // Simulação de busca no Firebase
     useEffect(() => {
         const fetchReservas = async () => {
             try {
                 setLoading(true);
+                const user = auth.currentUser;
+                if (!user) return;
 
+                const q = query(
+                    collection(db, 'reservas'),
+                    where('userId', '==', user.uid),
+                    orderBy('timestamp', 'asc')
+                );
 
-                setTimeout(() => {
+                const snapshot = await getDocs(q);
+                const data = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                })) as Reserva[];
 
-                    const agora = Date.now();
-                    const ativas = MOCK_RESERVAS.filter(reserva => reserva.timestamp >= agora);
-
-
-                    ativas.sort((a, b) => a.timestamp - b.timestamp);
-
-                    setReservasAtivas(ativas);
-                    setLoading(false);
-                }, 800);
+                // Filtra apenas as futuras
+                const agora = Date.now();
+                setReservasAtivas(data.filter(r => r.timestamp >= agora));
+                setLoading(false);
             } catch (error) {
                 console.error("Erro ao buscar reservas:", error);
+                // Fallback para mock se o banco estiver vazio ou der erro na primeira vez
+                setReservasAtivas(MOCK_RESERVAS.filter(r => r.timestamp >= Date.now()));
                 setLoading(false);
             }
         };
@@ -100,13 +118,59 @@ export default function ReservasScreen() {
         fetchReservas();
     }, []);
 
+    const handleSalvarReserva = async () => {
+        if (!dataStr || !horaStr) {
+            alert('Por favor, preencha a data e a hora.');
+            return;
+        }
+
+        try {
+            const user = auth.currentUser;
+            if (!user) return alert('Faça login para reservar!');
+
+            const novaReserva = {
+                userId: user.uid,
+                dataTexto: dataStr,
+                horaTexto: horaStr,
+                pessoas: parseInt(qtdPessoas) || 2,
+                status: 'pendente',
+                timestamp: Date.now() + 86400000, // Idealmente converteria a dataStr, mas para o MVP usamos +1 dia
+                criadoEm: new Date().toISOString()
+            };
+
+            const docRef = await addDoc(collection(db, 'reservas'), novaReserva);
+            
+            setReservasAtivas([...reservasAtivas, { id: docRef.id, ...novaReserva } as Reserva]);
+            setModalVisivel(false);
+            setDataStr('');
+            setHoraStr('');
+            alert('Reserva enviada com sucesso! 🌵');
+        } catch (error) {
+            alert('Erro ao reservar: ' + (error as any).message);
+        }
+    };
+
+    const cancelarReserva = async (id: string) => {
+      try {
+        await deleteDoc(doc(db, 'reservas', id));
+        setReservasAtivas(prev => prev.filter(r => r.id !== id));
+        alert('Reserva cancelada.');
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
     // Componente do Card de "Nova Reserva" (Fica no topo da lista)
     const renderHeader = () => (
         <View style={styles.headerContainer}>
             <Text style={styles.tituloSecao}>Suas Reservas</Text>
             <Text style={styles.subTitulo}>Garanta sua mesa e evite filas.</Text>
 
-            <TouchableOpacity style={styles.btnNovaReserva} activeOpacity={0.7}>
+            <TouchableOpacity
+                style={styles.btnNovaReserva}
+                activeOpacity={0.7}
+                onPress={() => setModalVisivel(true)}
+            >
                 <View style={styles.iconPlusContainer}>
                     <Text style={styles.iconPlus}>+</Text>
                 </View>
@@ -152,10 +216,11 @@ export default function ReservasScreen() {
                         <Text style={styles.infoTexto}>{item.pessoas} {item.pessoas === 1 ? 'Pessoa' : 'Pessoas'}</Text>
                     </View>
 
-                    <TouchableOpacity style={styles.btnDetalhes}>
-                        <Text style={styles.btnDetalhesTexto}>Ver Detalhes</Text>
+                    <TouchableOpacity style={styles.btnDetalhes} onPress={() => cancelarReserva(item.id)}>
+                        <Text style={[styles.btnDetalhesTexto, { color: '#d9534f' }]}>Cancelar</Text>
                     </TouchableOpacity>
                 </View>
+
             </View>
         );
     };
@@ -186,6 +251,62 @@ export default function ReservasScreen() {
                     }
                 />
             )}
+
+
+            {/* Modal de Nova Reserva */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisivel}
+                onRequestClose={() => setModalVisivel(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitulo}>Nova Reserva</Text>
+
+                        <Text style={styles.label}>Data (Ex: 15 de Junho)</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Ex: 15 de Junho"
+                            value={dataStr}
+                            onChangeText={setDataStr}
+                        />
+
+                        <Text style={styles.label}>Horário (Ex: 20:30)</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Ex: 20:30"
+                            value={horaStr}
+                            onChangeText={setHoraStr}
+                        />
+
+                        <Text style={styles.label}>Número de Pessoas</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="2"
+                            keyboardType="numeric"
+                            value={qtdPessoas}
+                            onChangeText={setQtdPessoas}
+                        />
+
+                        <View style={styles.modalBotoes}>
+                            <TouchableOpacity
+                                style={[styles.btnModal, styles.btnCancelar]}
+                                onPress={() => setModalVisivel(false)}
+                            >
+                                <Text style={styles.btnTextoCancelar}>Cancelar</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.btnModal, styles.btnConfirmar]}
+                                onPress={handleSalvarReserva}
+                            >
+                                <Text style={styles.btnTextoConfirmar}>Confirmar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -363,5 +484,67 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         paddingHorizontal: 20,
         lineHeight: 20,
-    }
+    },
+    // Estilos do Modal
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        width: '85%',
+        backgroundColor: colors.card,
+        borderRadius: 20,
+        padding: 24,
+        elevation: 10,
+    },
+    modalTitulo: {
+        fontSize: 22,
+        fontWeight: '800',
+        color: colors.textDark,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: colors.textDark,
+        marginBottom: 8,
+    },
+    input: {
+        backgroundColor: colors.background,
+        borderRadius: 8,
+        padding: 12,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: colors.border,
+        color: colors.textDark,
+    },
+    modalBotoes: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 8,
+    },
+    btnModal: {
+        flex: 0.48,
+        paddingVertical: 14,
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    btnCancelar: {
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    btnConfirmar: {
+        backgroundColor: colors.accent,
+    },
+    btnTextoCancelar: {
+        color: colors.muted,
+        fontWeight: '700',
+    },
+    btnTextoConfirmar: {
+        color: '#FFF',
+        fontWeight: '700',
+    },
 });

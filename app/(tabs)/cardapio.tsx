@@ -15,6 +15,7 @@ import {
   View
 } from 'react-native';
 import { db } from '../../firebaseConfig';
+import { useCart } from '../../context/CartContext';
 const { width: largura, height: altura } = Dimensions.get('window');
 
 
@@ -105,6 +106,7 @@ export default function CardapioScreen() {
   const [categorias, setCategorias] = useState<Categoria[]>(MOCK_CATEGORIAS);
   const [categoriaAtiva, setCategoriaAtiva] = useState<string>('todos');
   const [busca, setBusca] = useState('');
+  const { adicionarProduto } = useCart();
 
 
   const [loading, setLoading] = useState(true);
@@ -130,10 +132,17 @@ export default function CardapioScreen() {
           categoriaId: doc.data().categoriaId.trim(),
         }));
 
-        setProdutos(produtosFirebase);
+        if (produtosFirebase.length > 0) {
+          setProdutos(produtosFirebase);
+        } else {
+          // Se o banco estiver vazio, usa os mocks
+          setProdutos(MOCK_PRODUTOS);
+        }
         setLoading(false);
       } catch (error) {
         console.error("Erro ao buscar produtos:", error);
+        // Fallback em caso de erro
+        setProdutos(MOCK_PRODUTOS);
         setLoading(false);
       }
     };
@@ -167,6 +176,12 @@ export default function CardapioScreen() {
   };
 
 
+  const handleAdicionarAoPedido = (produto: Produto) => {
+    adicionarProduto(produto);
+    alert(`${produto.nome} adicionado ao seu pedido! 🌵`);
+  };
+
+
   const renderProduto = ({ item }: { item: Produto }) => (
     <TouchableOpacity style={styles.cardProduto} activeOpacity={0.85}>
       <Image
@@ -182,7 +197,7 @@ export default function CardapioScreen() {
 
         <View style={styles.produtoRodape}>
           <Text style={styles.produtoPreco}>R$ {item.preco.toFixed(2)}</Text>
-          <TouchableOpacity style={styles.btnAdd} onPress={() => { }}>
+          <TouchableOpacity style={styles.btnAdd} onPress={() => handleAdicionarAoPedido(item)}>
             <Text style={styles.btnAddText}>+</Text>
           </TouchableOpacity>
         </View>
