@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -17,7 +17,7 @@ import {
 // Importações do Firebase
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import { auth, db } from '../../firebaseConfig';
 
 const { width: largura, height: altura } = Dimensions.get('window');
@@ -110,6 +110,8 @@ export default function HomeScreen() {
   const [categorias, setCategorias] = useState<Categoria[]>(MOCK_CATEGORIAS);
   const [unidades, setUnidades] = useState<Unidade[]>(MOCK_UNIDADES);
   const [busca, setBusca] = useState('');
+  const flatListRef = useRef<FlatList>(null);
+  const [scrollIndex, setScrollIndex] = useState(0);
 
   // Estado para guardar o nome real do usuário
   const [nomeUsuarioReal, setNomeUsuarioReal] = useState('Visitante');
@@ -141,6 +143,86 @@ export default function HomeScreen() {
 
     fetchNomeUsuario();
   }, []);
+
+  // useEffect para buscar produtos e calcular os Destaques baseados na Média
+  useEffect(() => {
+    const fetchDestaques = async () => {
+      try {
+        const produtosRef = collection(db, 'produtos');
+        const snapshot = await getDocs(produtosRef);
+
+        const produtosFirebase = snapshot.docs.map(doc => ({
+          id: doc.id,
+          nome: doc.data().nome,
+          preco: doc.data().preco,
+          imagemUrl: doc.data().imagemUrl,
+          categoriaId: doc.data().categoriaId?.trim(),
+        }));
+
+        if (produtosFirebase.length > 0) {
+          // Agrupar produtos por categoria
+          const byCategory: Record<string, typeof produtosFirebase> = {};
+          produtosFirebase.forEach(p => {
+            if (!p.categoriaId) return;
+            if (!byCategory[p.categoriaId]) byCategory[p.categoriaId] = [];
+            byCategory[p.categoriaId].push(p);
+          });
+
+          const novosDestaques: Destaque[] = [];
+
+          // Pegar o valor médio de cada categoria e escolher o prato mais próximo
+          for (const cat in byCategory) {
+            const pratos = byCategory[cat];
+            const totalPreco = pratos.reduce((acc, p) => acc + (p.preco || 0), 0);
+            const media = totalPreco / pratos.length;
+
+            // Encontrar o prato com valor mais próximo da média
+            let closest = pratos[0];
+            let minDiff = Math.abs((pratos[0].preco || 0) - media);
+
+            for (let i = 1; i < pratos.length; i++) {
+              const diff = Math.abs((pratos[i].preco || 0) - media);
+              if (diff < minDiff) {
+                minDiff = diff;
+                closest = pratos[i];
+              }
+            }
+
+            novosDestaques.push({
+              id: closest.id,
+              nome: closest.nome,
+              preco: closest.preco,
+              avaliacao: 4.8, // Valor fixo já que não existe no BD ainda
+              imagemUrl: closest.imagemUrl,
+              categoria: closest.categoriaId,
+            });
+          }
+
+          if (novosDestaques.length > 0) {
+            setDestaques(novosDestaques);
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao buscar destaques:", error);
+      }
+    };
+
+    fetchDestaques();
+  }, []);
+
+  const ITEM_WIDTH = 162; // 150 de largura do card + 12 de marginRight
+
+  const handleScroll = (direction: 'left' | 'right') => {
+    if (!flatListRef.current) return;
+    const maxIndex = destaquesFiltrados.length - 1;
+    let newIndex = direction === 'left' ? scrollIndex - 1 : scrollIndex + 1;
+
+    if (newIndex < 0) newIndex = 0;
+    if (newIndex > maxIndex) newIndex = maxIndex;
+
+    setScrollIndex(newIndex);
+    flatListRef.current.scrollToIndex({ index: newIndex, animated: true });
+  };
 
   const destaquesFiltrados = busca
     ? destaques.filter((d: Destaque) => d.nome.toLowerCase().includes(busca.toLowerCase()))
@@ -202,16 +284,17 @@ export default function HomeScreen() {
             <Text style={styles.secaoTitulo}> destaques do Dia</Text>
           </View>
           <View style={styles.navButtons}>
-            <TouchableOpacity style={[styles.navBtn, { marginRight: 6 }]}>
+            <TouchableOpacity style={[styles.navBtn, { marginRight: 6 }]} onPress={() => handleScroll('left')}>
               <Text style={styles.navBtnText}>‹</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.navBtn}>
+            <TouchableOpacity style={styles.navBtn} onPress={() => handleScroll('right')}>
               <Text style={styles.navBtnText}>›</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <FlatList
+          ref={flatListRef}
           data={destaquesFiltrados}
           renderItem={renderDestaque}
           keyExtractor={item => item.id}
@@ -219,6 +302,13 @@ export default function HomeScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.listaDestaques}
           scrollEnabled={true}
+          onMomentumScrollEnd={(e) => {
+            const offsetX = e.nativeEvent.contentOffset.x;
+            setScrollIndex(Math.round(offsetX / ITEM_WIDTH));
+          }}
+          getItemLayout={(data, index) => (
+            { length: ITEM_WIDTH, offset: ITEM_WIDTH * index, index }
+          )}
         />
 
         <View style={styles.categoriasGrid}>
