@@ -127,7 +127,7 @@ export default function CardapioScreen() {
           descricao: doc.data().descricao,
           preco: doc.data().preco,
           imagemUrl: doc.data().imagemUrl,
-          categoriaId: doc.data().categoriaId,
+          categoriaId: doc.data().categoriaId.trim(),
         }));
 
         setProdutos(produtosFirebase);
