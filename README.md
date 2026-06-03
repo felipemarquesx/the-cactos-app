@@ -17,7 +17,7 @@ Repositório destinado ao desenvolvimento do aplicativo móvel do **The Cactos R
 - **TypeScript** (Tipagem estática)
 - **Firebase** (Firestore para banco de dados e Authentication)
 - **Context API** (Gerenciamento de estado global, ex: Carrinho)
-- **DiceBear API** (Geração de avatares dinâmicos para o perfil dos usuários)
+- **Icons8** (Ícones ilustrativos da cultura brasileira para os avatares dos usuários)
 
 ## ⚙️ Como executar o projeto localmente
 

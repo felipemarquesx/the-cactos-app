@@ -1,12 +1,15 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { collection, getDocs } from 'firebase/firestore';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Dimensions,
+  Easing,
   FlatList,
   Image,
+  Modal,
   Platform,
   SafeAreaView,
   StatusBar,
@@ -122,6 +125,15 @@ export default function CardapioScreen() {
   const { categoria } = useLocalSearchParams();
 
   const [loading, setLoading] = useState(true);
+  const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null);
+  const [modalVisivel, setModalVisivel] = useState(false);
+
+  // Animação do carrinho
+  const animY = useRef(new Animated.Value(0)).current;
+  const animScale = useRef(new Animated.Value(1)).current;
+  const animOpacity = useRef(new Animated.Value(0)).current;
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [animImage, setAnimImage] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -197,12 +209,54 @@ export default function CardapioScreen() {
 
   const handleAdicionarAoPedido = (produto: Produto) => {
     adicionarProduto(produto);
-    alert(`${produto.nome} adicionado ao seu pedido! 🌵`);
+    iniciarAnimacao(produto.imagemUrl);
+  };
+
+  const iniciarAnimacao = (imagemUrl: string) => {
+    setAnimImage(imagemUrl);
+    setIsAnimating(true);
+    animY.setValue(0);
+    animScale.setValue(1);
+    animOpacity.setValue(1);
+
+    Animated.sequence([
+      Animated.timing(animY, {
+        toValue: -50,
+        duration: 250,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.ease)
+      }),
+      Animated.parallel([
+        Animated.timing(animY, {
+          toValue: altura / 2,
+          duration: 600,
+          useNativeDriver: true,
+          easing: Easing.in(Easing.ease)
+        }),
+        Animated.timing(animScale, {
+          toValue: 0.2,
+          duration: 600,
+          useNativeDriver: true
+        }),
+        Animated.timing(animOpacity, {
+          toValue: 0.3,
+          duration: 600,
+          useNativeDriver: true
+        })
+      ])
+    ]).start(() => {
+      setIsAnimating(false);
+    });
+  };
+
+  const abrirModalProduto = (produto: Produto) => {
+    setProdutoSelecionado(produto);
+    setModalVisivel(true);
   };
 
 
   const renderProduto = ({ item }: { item: Produto }) => (
-    <TouchableOpacity style={styles.cardProduto} activeOpacity={0.85}>
+    <TouchableOpacity style={styles.cardProduto} activeOpacity={0.85} onPress={() => abrirModalProduto(item)}>
       <Image
         source={{ uri: item.imagemUrl }}
         style={styles.produtoImagem}
@@ -276,6 +330,60 @@ export default function CardapioScreen() {
               <Text style={styles.emptyText}>Nenhum prato encontrado com esse nome. 🌵</Text>
             </View>
           }
+        />
+      )}
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisivel}
+        onRequestClose={() => setModalVisivel(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity style={styles.btnFecharModalInfo} onPress={() => setModalVisivel(false)}>
+              <MaterialCommunityIcons name="close" size={24} color={colors.textDark} />
+            </TouchableOpacity>
+            <Image
+              source={{ uri: produtoSelecionado?.imagemUrl }}
+              style={styles.modalImagem}
+              resizeMode="cover"
+            />
+            <View style={styles.modalInfo}>
+              <Text style={styles.modalNome}>{produtoSelecionado?.nome}</Text>
+              <Text style={styles.modalDescricaoInfo}>{produtoSelecionado?.descricao || 'Sem descrição disponível.'}</Text>
+              <View style={styles.modalRodapeInfo}>
+                <Text style={styles.modalPrecoInfo}>R$ {produtoSelecionado?.preco?.toFixed(2)}</Text>
+                <TouchableOpacity
+                  style={styles.btnAdicionarModal}
+                  onPress={() => {
+                    if (produtoSelecionado) {
+                      handleAdicionarAoPedido(produtoSelecionado);
+                      setModalVisivel(false);
+                    }
+                  }}
+                >
+                  <Text style={styles.btnAdicionarModalTexto}>Adicionar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {isAnimating && animImage && (
+        <Animated.Image
+          source={{ uri: animImage }}
+          style={[
+            styles.animacaoImagem,
+            {
+              transform: [
+                { translateY: animY },
+                { scale: animScale }
+              ],
+              opacity: animOpacity
+            }
+          ]}
         />
       )}
     </SafeAreaView>
@@ -434,5 +542,83 @@ const styles = StyleSheet.create({
   emptyText: {
     color: colors.muted,
     fontSize: 16,
-  }
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '85%',
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    overflow: 'hidden',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  modalImagem: {
+    width: '100%',
+    height: 200,
+    backgroundColor: colors.border,
+  },
+  btnFecharModalInfo: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    borderRadius: 20,
+    padding: 4,
+    zIndex: 10,
+  },
+  modalInfo: {
+    padding: 20,
+  },
+  modalNome: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.textDark,
+    marginBottom: 8,
+  },
+  modalDescricaoInfo: {
+    fontSize: 14,
+    color: colors.muted,
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  modalRodapeInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modalPrecoInfo: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.accent,
+  },
+  btnAdicionarModal: {
+    backgroundColor: colors.accent,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  btnAdicionarModalTexto: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  animacaoImagem: {
+    position: 'absolute',
+    top: altura / 2 - 40,
+    left: largura / 2 - 40,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    zIndex: 9999,
+    borderWidth: 3,
+    borderColor: colors.accent,
+  },
 });

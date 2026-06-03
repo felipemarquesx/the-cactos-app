@@ -1,8 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   Dimensions,
+  Easing,
   FlatList,
   Image,
+  Modal,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -18,6 +21,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
+import { useCart } from '../../context/CartContext';
 import { auth, db } from '../../firebaseConfig';
 
 const { width: largura, height: altura } = Dimensions.get('window');
@@ -25,6 +29,7 @@ const { width: largura, height: altura } = Dimensions.get('window');
 type Destaque = {
   id: string;
   nome: string;
+  descricao?: string;
   preco: number;
   avaliacao: number;
   imagemUrl: string;
@@ -48,6 +53,7 @@ const MOCK_DESTAQUES: Destaque[] = [
   {
     id: '1',
     nome: 'Carne de Sol Acebolada',
+    descricao: 'Acompanha macaxeira frita, farofa de manteiga de garrafa e vinagrete fresco.',
     preco: 72.0,
     avaliacao: 4.8,
     imagemUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=300&q=80',
@@ -56,6 +62,7 @@ const MOCK_DESTAQUES: Destaque[] = [
   {
     id: '2',
     nome: 'Escondidinho do Cariri',
+    descricao: 'Purê de macaxeira cremoso recheado com carne seca desfiada e gratinado com queijo coalho.',
     preco: 58.0,
     avaliacao: 4.9,
     imagemUrl: 'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=300&q=80',
@@ -64,6 +71,7 @@ const MOCK_DESTAQUES: Destaque[] = [
   {
     id: '3',
     nome: 'Tapioca de Lagosta',
+    descricao: 'Massa fininha recheada com cauda de lagosta na manteiga de ervas e requeijão.',
     preco: 95.0,
     avaliacao: 5.0,
     imagemUrl: 'https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=300&q=80',
@@ -72,6 +80,7 @@ const MOCK_DESTAQUES: Destaque[] = [
   {
     id: '4',
     nome: 'Tapioca Avurá',
+    descricao: 'Tapioca tradicional com queijo coalho e coco ralado.',
     preco: 35.0,
     avaliacao: 4.7,
     imagemUrl: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=300&q=80',
@@ -112,6 +121,16 @@ export default function HomeScreen() {
   const [busca, setBusca] = useState('');
   const flatListRef = useRef<FlatList>(null);
   const [scrollIndex, setScrollIndex] = useState(0);
+  const { adicionarProduto } = useCart();
+  const [produtoSelecionado, setProdutoSelecionado] = useState<Destaque | null>(null);
+  const [modalVisivel, setModalVisivel] = useState(false);
+
+  // Animação do carrinho
+  const animY = useRef(new Animated.Value(0)).current;
+  const animScale = useRef(new Animated.Value(1)).current;
+  const animOpacity = useRef(new Animated.Value(0)).current;
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [animImage, setAnimImage] = useState<string | null>(null);
 
   // Estado para guardar o nome real do usuário
   const [nomeUsuarioReal, setNomeUsuarioReal] = useState('Visitante');
@@ -154,6 +173,7 @@ export default function HomeScreen() {
         const produtosFirebase = snapshot.docs.map(doc => ({
           id: doc.id,
           nome: doc.data().nome,
+          descricao: doc.data().descricao,
           preco: doc.data().preco,
           imagemUrl: doc.data().imagemUrl,
           categoriaId: doc.data().categoriaId?.trim(),
@@ -191,6 +211,7 @@ export default function HomeScreen() {
             novosDestaques.push({
               id: closest.id,
               nome: closest.nome,
+              descricao: closest.descricao,
               preco: closest.preco,
               avaliacao: 4.8, // Valor fixo já que não existe no BD ainda
               imagemUrl: closest.imagemUrl,
@@ -224,12 +245,62 @@ export default function HomeScreen() {
     flatListRef.current.scrollToIndex({ index: newIndex, animated: true });
   };
 
+  const abrirModalProduto = (produto: Destaque) => {
+    setProdutoSelecionado(produto);
+    setModalVisivel(true);
+  };
+
+  const handleAdicionarAoPedido = (produto: Destaque) => {
+    adicionarProduto(produto);
+    setModalVisivel(false);
+    iniciarAnimacao(produto.imagemUrl);
+  };
+
+  const iniciarAnimacao = (imagemUrl: string) => {
+    setAnimImage(imagemUrl);
+    setIsAnimating(true);
+    animY.setValue(0);
+    animScale.setValue(1);
+    animOpacity.setValue(1);
+
+    Animated.sequence([
+      // Pequeno pulo para cima
+      Animated.timing(animY, {
+        toValue: -50,
+        duration: 250,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.ease)
+      }),
+      // Cai em direção à aba "Pedidos" (centro inferior da tela)
+      Animated.parallel([
+        Animated.timing(animY, {
+          toValue: altura / 2,
+          duration: 600,
+          useNativeDriver: true,
+          easing: Easing.in(Easing.ease)
+        }),
+        Animated.timing(animScale, {
+          toValue: 0.2,
+          duration: 600,
+          useNativeDriver: true
+        }),
+        Animated.timing(animOpacity, {
+          toValue: 0.3,
+          duration: 600,
+          useNativeDriver: true
+        })
+      ])
+    ]).start(() => {
+      setIsAnimating(false);
+    });
+  };
+
   const destaquesFiltrados = busca
     ? destaques.filter((d: Destaque) => d.nome.toLowerCase().includes(busca.toLowerCase()))
     : destaques;
 
   const renderDestaque = ({ item }: { item: Destaque }) => (
-    <TouchableOpacity style={styles.cardDestaque} activeOpacity={0.85}>
+    <TouchableOpacity style={styles.cardDestaque} activeOpacity={0.85} onPress={() => abrirModalProduto(item)}>
       <Image
         source={{ uri: item.imagemUrl }}
         style={styles.cardImagem}
@@ -350,6 +421,59 @@ export default function HomeScreen() {
 
         <View style={{ height: 16 }} />
       </ScrollView>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisivel}
+        onRequestClose={() => setModalVisivel(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity style={styles.btnFecharModalInfo} onPress={() => setModalVisivel(false)}>
+              <MaterialCommunityIcons name="close" size={24} color={colors.textDark} />
+            </TouchableOpacity>
+            <Image
+              source={{ uri: produtoSelecionado?.imagemUrl }}
+              style={styles.modalImagem}
+              resizeMode="cover"
+            />
+            <View style={styles.modalInfo}>
+              <Text style={styles.modalNome}>{produtoSelecionado?.nome}</Text>
+              <Text style={styles.modalDescricaoInfo}>{produtoSelecionado?.descricao || 'Sem descrição disponível.'}</Text>
+              <View style={styles.modalRodapeInfo}>
+                <Text style={styles.modalPrecoInfo}>R$ {produtoSelecionado?.preco?.toFixed(2)}</Text>
+                <TouchableOpacity
+                  style={styles.btnAdicionarModal}
+                  onPress={() => {
+                    if (produtoSelecionado) {
+                      handleAdicionarAoPedido(produtoSelecionado);
+                    }
+                  }}
+                >
+                  <Text style={styles.btnAdicionarModalTexto}>Adicionar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {isAnimating && animImage && (
+        <Animated.Image
+          source={{ uri: animImage }}
+          style={[
+            styles.animacaoImagem,
+            {
+              transform: [
+                { translateY: animY },
+                { scale: animScale }
+              ],
+              opacity: animOpacity
+            }
+          ]}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -650,5 +774,83 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.muted,
     marginTop: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '85%',
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    overflow: 'hidden',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  modalImagem: {
+    width: '100%',
+    height: 200,
+    backgroundColor: colors.border,
+  },
+  btnFecharModalInfo: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    borderRadius: 20,
+    padding: 4,
+    zIndex: 10,
+  },
+  modalInfo: {
+    padding: 20,
+  },
+  modalNome: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.textDark,
+    marginBottom: 8,
+  },
+  modalDescricaoInfo: {
+    fontSize: 14,
+    color: colors.muted,
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  modalRodapeInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modalPrecoInfo: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.accent,
+  },
+  btnAdicionarModal: {
+    backgroundColor: colors.accent,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  btnAdicionarModalTexto: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  animacaoImagem: {
+    position: 'absolute',
+    top: altura / 2 - 40,
+    left: largura / 2 - 40,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    zIndex: 9999,
+    borderWidth: 3,
+    borderColor: colors.accent,
   },
 });
