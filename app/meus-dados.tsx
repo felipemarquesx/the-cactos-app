@@ -34,6 +34,13 @@ export default function MeusDadosScreen() {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
+
+  // ↓ novos estados de endereço
+  const [bairro, setBairro] = useState('');
+  const [rua, setRua] = useState('');
+  const [numero, setNumero] = useState('');
+  const [complemento, setComplemento] = useState('');
+
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const router = useRouter();
@@ -46,8 +53,15 @@ export default function MeusDadosScreen() {
           setEmail(user.email || '');
           const userDoc = await getDoc(doc(db, 'usuarios', user.uid));
           if (userDoc.exists()) {
-            setNome(userDoc.data().nome || '');
-            setTelefone(userDoc.data().telefone || '');
+            const data = userDoc.data();
+            setNome(data.nome || '');
+            setTelefone(data.telefone || '');
+
+            // ↓ carrega endereço salvo
+            setBairro(data.bairro || '');
+            setRua(data.rua || '');
+            setNumero(data.numero || '');
+            setComplemento(data.complemento || '');
           }
         }
       } catch (error) {
@@ -67,8 +81,13 @@ export default function MeusDadosScreen() {
       const user = auth.currentUser;
       if (user) {
         await updateDoc(doc(db, 'usuarios', user.uid), {
-          nome: nome,
-          telefone: telefone
+          nome,
+          telefone,
+          // ↓ salva endereço no Firestore
+          bairro,
+          rua,
+          numero,
+          complemento,
         });
         alert('Dados atualizados com sucesso! 🌵');
         router.back();
@@ -101,6 +120,7 @@ export default function MeusDadosScreen() {
 
         <ScrollView contentContainerStyle={styles.container}>
           <View style={styles.caixaInfo}>
+
             <Text style={styles.label}>E-mail (Não editável)</Text>
             <View style={[styles.input, styles.inputDesativado]}>
               <Text style={styles.textoDesativado}>{email}</Text>
@@ -115,7 +135,7 @@ export default function MeusDadosScreen() {
               placeholderTextColor={colors.muted}
             />
 
-            <Text style={styles.label}>Telefone / WhatsApp</Text>
+            <Text style={styles.label}>Telefone</Text>
             <TextInput
               style={styles.input}
               value={telefone}
@@ -123,6 +143,54 @@ export default function MeusDadosScreen() {
               placeholder="(00) 00000-0000"
               placeholderTextColor={colors.muted}
               keyboardType="phone-pad"
+            />
+          </View>
+
+          {/* ↓ NOVA SEÇÃO: Endereço para entrega */}
+          <View style={styles.caixaInfo}>
+            <Text style={styles.secaoTitulo}>Endereço</Text>
+
+            <Text style={styles.label}>Rua / Avenida</Text>
+            <TextInput
+              style={styles.input}
+              value={rua}
+              onChangeText={setRua}
+              placeholder="Ex: Rua das Flores"
+              placeholderTextColor={colors.muted}
+            />
+
+            {/* Número e Bairro lado a lado */}
+            <View style={styles.linha}>
+              <View style={styles.metade}>
+                <Text style={styles.label}>Número</Text>
+                <TextInput
+                  style={styles.input}
+                  value={numero}
+                  onChangeText={setNumero}
+                  placeholder="Ex: 123"
+                  placeholderTextColor={colors.muted}
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={styles.metade}>
+                <Text style={styles.label}>Bairro</Text>
+                <TextInput
+                  style={styles.input}
+                  value={bairro}
+                  onChangeText={setBairro}
+                  placeholder="Ex: Centro"
+                  placeholderTextColor={colors.muted}
+                />
+              </View>
+            </View>
+
+            <Text style={styles.label}>Complemento (opcional)</Text>
+            <TextInput
+              style={styles.input}
+              value={complemento}
+              onChangeText={setComplemento}
+              placeholder="Ex: Apto 12, Casa dos fundos"
+              placeholderTextColor={colors.muted}
             />
           </View>
 
@@ -144,81 +212,40 @@ export default function MeusDadosScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-  },
+  safe: { flex: 1, backgroundColor: colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: altura * 0.05,
-    paddingBottom: 20,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 20, paddingTop: altura * 0.05, paddingBottom: 20,
   },
-  btnVoltar: {
-    padding: 8,
-    marginRight: 12,
-  },
-  titulo: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.textDark,
-  },
-  container: {
-    padding: 20,
-  },
+  btnVoltar: { padding: 8, marginRight: 12 },
+  titulo: { fontSize: 24, fontWeight: '800', color: colors.textDark },
+  container: { padding: 20 },
   caixaInfo: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: 30,
+    backgroundColor: colors.card, borderRadius: 16, padding: 20,
+    borderWidth: 1, borderColor: colors.border, marginBottom: 20,
+  },
+  // ↓ novo estilo: título da seção de endereço
+  secaoTitulo: {
+    fontSize: 16, fontWeight: '800', color: colors.accent, marginBottom: 4,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textDark,
-    marginBottom: 8,
-    marginTop: 16,
+    fontSize: 14, fontWeight: '700', color: colors.textDark,
+    marginBottom: 8, marginTop: 16,
   },
   input: {
-    backgroundColor: colors.background,
-    borderRadius: 10,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    color: colors.textDark,
-    fontSize: 16,
+    backgroundColor: colors.background, borderRadius: 10, padding: 14,
+    borderWidth: 1, borderColor: colors.border, color: colors.textDark, fontSize: 16,
   },
-  inputDesativado: {
-    backgroundColor: '#EAEAEA',
-    borderColor: '#CCC',
-  },
-  textoDesativado: {
-    color: '#888',
-  },
+  inputDesativado: { backgroundColor: '#EAEAEA', borderColor: '#CCC' },
+  textoDesativado: { color: '#888' },
+  // ↓ novos estilos: linha com dois campos lado a lado
+  linha: { flexDirection: 'row', gap: 12 },
+  metade: { flex: 1 },
   btnSalvar: {
-    backgroundColor: colors.accent,
-    paddingVertical: 18,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    backgroundColor: colors.accent, paddingVertical: 18, borderRadius: 12,
+    alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1,
+    shadowRadius: 5, shadowOffset: { width: 0, height: 4 }, elevation: 3,
   },
-  btnSalvarText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
+  btnSalvarText: { color: '#FFF', fontSize: 16, fontWeight: '800', letterSpacing: 1 },
 });
