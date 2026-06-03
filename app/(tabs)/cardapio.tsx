@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { collection, getDocs } from 'firebase/firestore';
 import React, { useEffect, useRef, useState } from 'react';
@@ -19,6 +19,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import * as Animatable from 'react-native-animatable';
 import { useCart } from '../../context/CartContext';
 import { db } from '../../firebaseConfig';
 const { width: largura, height: altura } = Dimensions.get('window');
@@ -116,6 +117,9 @@ const MOCK_PRODUTOS: Produto[] = [
 ];
 
 export default function CardapioScreen() {
+const [animarParaSacola, setAnimarParaSacola] = useState(false);
+const [alertaPedidoVisivel, setAlertaPedidoVisivel] = useState(false);
+const [produtoAdicionado, setProdutoAdicionado] = useState('');
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>(MOCK_CATEGORIAS);
   const [categoriaAtiva, setCategoriaAtiva] = useState<string>('todos');
@@ -207,6 +211,7 @@ export default function CardapioScreen() {
   };
 
 
+<<<<<<< HEAD
   const handleAdicionarAoPedido = (produto: Produto) => {
     adicionarProduto(produto);
     iniciarAnimacao(produto.imagemUrl);
@@ -253,6 +258,13 @@ export default function CardapioScreen() {
     setProdutoSelecionado(produto);
     setModalVisivel(true);
   };
+=======
+const handleAdicionarAoPedido = (produto: Produto) => {
+  adicionarProduto(produto);
+  setProdutoAdicionado(produto.nome); // Nome que será exibido no modal
+  setAlertaPedidoVisivel(true);       // Ativa o modal
+};
+>>>>>>> main
 
 
   const renderProduto = ({ item }: { item: Produto }) => (
@@ -332,6 +344,7 @@ export default function CardapioScreen() {
           }
         />
       )}
+<<<<<<< HEAD
 
       <Modal
         animationType="fade"
@@ -386,6 +399,43 @@ export default function CardapioScreen() {
           ]}
         />
       )}
+=======
+     <Modal transparent={true} visible={alertaPedidoVisivel} animationType="none">
+  <View style={styles.modalBackground}>
+    <Animatable.View animation="slideInDown" style={styles.modalContainer}>
+      <Feather name="check-circle" size={50} color="#28a745" />
+      <Text style={styles.modalTitle}>Seu pedido foi adicionado</Text>
+      
+     
+      {animarParaSacola && (
+        <Animatable.View 
+          animation={{
+            from: { translateY: 0, opacity: 1 },
+            to: { translateY: 500, opacity: 0 } 
+          }}
+          duration={800}
+          style={styles.iconeFantasma}
+        >
+          <Feather name="shopping-bag" size={40} color="#AC5D21" />
+        </Animatable.View>
+      )}
+
+      <TouchableOpacity 
+        style={styles.modalButton} 
+        onPress={() => {
+          setAnimarParaSacola(true); 
+          setTimeout(() => {
+            setAlertaPedidoVisivel(false);
+            setAnimarParaSacola(false);
+          }, 800); 
+        }}
+      >
+        <Text style={styles.modalButtonText}>OK</Text>
+      </TouchableOpacity>
+    </Animatable.View>
+  </View>
+</Modal>
+>>>>>>> main
     </SafeAreaView>
   );
 }
@@ -543,6 +593,7 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 16,
   },
+<<<<<<< HEAD
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -620,5 +671,28 @@ const styles = StyleSheet.create({
     zIndex: 9999,
     borderWidth: 3,
     borderColor: colors.accent,
+=======
+  modalBackground: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '85%',
+    backgroundColor: '#FFF',
+    padding: 25,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  modalTitle: { fontSize: 22, fontWeight: 'bold', marginVertical: 10 },
+  modalText: { fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 20 },
+  modalButton: { backgroundColor: '#AC5D21', padding: 15, borderRadius: 25, width: '100%' },
+  modalButtonText: { color: '#FFF', textAlign: 'center', fontWeight: 'bold' },
+  iconeFantasma: {
+    position: 'absolute',
+    top: 100,
+    zIndex: 999,
+>>>>>>> main
   },
 });

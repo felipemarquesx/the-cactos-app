@@ -8,6 +8,7 @@ import {
   Image,
   ImageBackground,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -29,6 +30,7 @@ const tela = Dimensions.get("window");
 const { height: altura } = Dimensions.get('window');
 
 export default function LoginScreen() {
+  const[alertaVisivel, setAlertaVisivel] = useState(false);
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [nome, setNome] = useState('');
@@ -72,8 +74,7 @@ export default function LoginScreen() {
         pratoMaisPedido: "Nenhum ainda"
       });
 
-      alert('Conta criada com sucesso!');
-      router.replace('/(tabs)/home');
+     setAlertaVisivel(true);
     } catch (error: any) {
       alert('Erro ao cadastrar: ' + error.message);
     } finally {
@@ -160,6 +161,35 @@ export default function LoginScreen() {
           </View>
         </ImageBackground>
       </ScrollView>
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={alertaVisivel}
+        onRequestClose={() => setAlertaVisivel(false)}
+      >
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
+            
+            
+            <Feather name="check-circle" size={50} color="#155724"/>
+            
+            <Text style={styles.modalTitle}>Bem Vindo</Text>
+            <Text style={styles.modalText}>Conta criada com sucesso</Text>
+            
+            <TouchableOpacity 
+              style={styles.modalButton} 
+              onPress={() => {
+                setAlertaVisivel(false); 
+                router.replace('/(tabs)/home'); 
+              
+              }}
+            >
+              <Text style={styles.modalButtonText}>Entrar</Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -216,4 +246,44 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     color: colors.textDark,
   },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '80%',
+    backgroundColor: '#FFF',
+    padding: 25,
+    borderRadius: 15,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  modalText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 5,
+    marginBottom: 25,
+  },
+  modalButton: {
+    backgroundColor: '#C85A17',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  }
 });
