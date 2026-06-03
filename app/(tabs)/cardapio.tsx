@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { collection, getDocs } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
@@ -7,6 +7,7 @@ import {
   Dimensions,
   FlatList,
   Image,
+  Modal,
   Platform,
   SafeAreaView,
   StatusBar,
@@ -16,6 +17,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import * as Animatable from 'react-native-animatable';
 import { useCart } from '../../context/CartContext';
 import { db } from '../../firebaseConfig';
 const { width: largura, height: altura } = Dimensions.get('window');
@@ -104,6 +106,8 @@ const MOCK_PRODUTOS: Produto[] = [
 ];
 
 export default function CardapioScreen() {
+const [alertaPedidoVisivel, setAlertaPedidoVisivel] = useState(false);
+const [produtoAdicionado, setProdutoAdicionado] = useState('');
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>(MOCK_CATEGORIAS);
   const [categoriaAtiva, setCategoriaAtiva] = useState<string>('todos');
@@ -186,10 +190,11 @@ export default function CardapioScreen() {
   };
 
 
-  const handleAdicionarAoPedido = (produto: Produto) => {
-    adicionarProduto(produto);
-    alert(`${produto.nome} adicionado ao seu pedido! 🌵`);
-  };
+const handleAdicionarAoPedido = (produto: Produto) => {
+  adicionarProduto(produto);
+  setProdutoAdicionado(produto.nome); // Nome que será exibido no modal
+  setAlertaPedidoVisivel(true);       // Ativa o modal
+};
 
 
   const renderProduto = ({ item }: { item: Produto }) => (
@@ -269,6 +274,22 @@ export default function CardapioScreen() {
           }
         />
       )}
+      <Modal transparent={true} visible={alertaPedidoVisivel} animationType="fade">
+  <View style={styles.modalBackground}>
+    <Animatable.View animation="bounceIn" duration={800} style={styles.modalContainer}>
+      <Feather name="shopping-cart" size={50} color="#AC5D21" />
+      <Text style={styles.modalTitle}>Adicionado </Text>
+      <Text style={styles.modalText}>{produtoAdicionado} foi adicionado ao seu pedido 🌵</Text>
+      
+      <TouchableOpacity 
+        style={styles.modalButton} 
+        onPress={() => setAlertaPedidoVisivel(false)}
+      >
+        <Text style={styles.modalButtonText}>OK</Text>
+      </TouchableOpacity>
+    </Animatable.View>
+  </View>
+</Modal>
     </SafeAreaView>
   );
 }
@@ -425,5 +446,22 @@ const styles = StyleSheet.create({
   emptyText: {
     color: colors.muted,
     fontSize: 16,
-  }
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '85%',
+    backgroundColor: '#FFF',
+    padding: 25,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  modalTitle: { fontSize: 22, fontWeight: 'bold', marginVertical: 10 },
+  modalText: { fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 20 },
+  modalButton: { backgroundColor: '#AC5D21', padding: 15, borderRadius: 25, width: '100%' },
+  modalButtonText: { color: '#FFF', textAlign: 'center', fontWeight: 'bold' },
 });
