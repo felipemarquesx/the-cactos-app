@@ -56,6 +56,7 @@ const MOCK_CATEGORIAS: Categoria[] = [
   { id: 'todos', nome: 'Todos' },
   { id: 'carnes', nome: 'Carnes' },
   { id: 'peixes', nome: 'Peixes' },
+  { id: 'vegetariano', nome: 'Vegetariano' },
   { id: 'lanches', nome: 'Lanches' },
   { id: 'bebidas', nome: 'Bebidas' },
   { id: 'sobremesas', nome: 'Sobremesas' },
@@ -102,6 +103,14 @@ const MOCK_PRODUTOS: Produto[] = [
     preco: 15.0,
     imagemUrl: 'https://receitadaboa.com.br/wp-content/uploads/2024/08/iStock-1383076817.jpg?w=300&q=80',
     categoriaId: 'sobremesas',
+  },
+  {
+    id: '6',
+    nome: 'Moqueca de Banana-da-Terra',
+    descricao: 'A tradicional moqueca baiana em versão vegetariana, com banana-da-terra, leite de coco e azeite de dendê.',
+    preco: 48.0,
+    imagemUrl: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=300&q=80',
+    categoriaId: 'vegetariano',
   }
 ];
 
