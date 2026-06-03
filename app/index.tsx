@@ -179,8 +179,9 @@ export default function LoginScreen() {
             <TouchableOpacity 
               style={styles.modalButton} 
               onPress={() => {
-                setAlertaVisivel(false); // Esconde o aviso
-                router.replace('/(tabs)/home'); //manda para o home
+                setAlertaVisivel(false); 
+                router.replace('/(tabs)/home'); 
+              
               }}
             >
               <Text style={styles.modalButtonText}>Entrar</Text>

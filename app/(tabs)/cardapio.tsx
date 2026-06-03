@@ -115,6 +115,7 @@ const MOCK_PRODUTOS: Produto[] = [
 ];
 
 export default function CardapioScreen() {
+const [animarParaSacola, setAnimarParaSacola] = useState(false);
 const [alertaPedidoVisivel, setAlertaPedidoVisivel] = useState(false);
 const [produtoAdicionado, setProdutoAdicionado] = useState('');
   const [produtos, setProdutos] = useState<Produto[]>([]);
@@ -283,16 +284,35 @@ const handleAdicionarAoPedido = (produto: Produto) => {
           }
         />
       )}
-      <Modal transparent={true} visible={alertaPedidoVisivel} animationType="fade">
+     <Modal transparent={true} visible={alertaPedidoVisivel} animationType="none">
   <View style={styles.modalBackground}>
-    <Animatable.View animation="bounceIn" duration={800} style={styles.modalContainer}>
-      <Feather name="shopping-cart" size={50} color="#AC5D21" />
-      <Text style={styles.modalTitle}>Adicionado </Text>
-      <Text style={styles.modalText}>{produtoAdicionado} foi adicionado ao seu pedido 🌵</Text>
+    <Animatable.View animation="slideInDown" style={styles.modalContainer}>
+      <Feather name="check-circle" size={50} color="#28a745" />
+      <Text style={styles.modalTitle}>Seu pedido foi adicionado</Text>
       
+     
+      {animarParaSacola && (
+        <Animatable.View 
+          animation={{
+            from: { translateY: 0, opacity: 1 },
+            to: { translateY: 500, opacity: 0 } 
+          }}
+          duration={800}
+          style={styles.iconeFantasma}
+        >
+          <Feather name="shopping-bag" size={40} color="#AC5D21" />
+        </Animatable.View>
+      )}
+
       <TouchableOpacity 
         style={styles.modalButton} 
-        onPress={() => setAlertaPedidoVisivel(false)}
+        onPress={() => {
+          setAnimarParaSacola(true); 
+          setTimeout(() => {
+            setAlertaPedidoVisivel(false);
+            setAnimarParaSacola(false);
+          }, 800); 
+        }}
       >
         <Text style={styles.modalButtonText}>OK</Text>
       </TouchableOpacity>
@@ -473,4 +493,9 @@ const styles = StyleSheet.create({
   modalText: { fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 20 },
   modalButton: { backgroundColor: '#AC5D21', padding: 15, borderRadius: 25, width: '100%' },
   modalButtonText: { color: '#FFF', textAlign: 'center', fontWeight: 'bold' },
+  iconeFantasma: {
+    position: 'absolute',
+    top: 100,
+    zIndex: 999,
+  },
 });
