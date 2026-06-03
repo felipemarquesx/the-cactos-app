@@ -149,11 +149,11 @@ export default function CardapioScreen() {
         // 3. Transforma no formato que a sua FlatList entende
         const produtosFirebase = snapshot.docs.map(doc => ({
           id: doc.id,
-          nome: doc.data().nome,
-          descricao: doc.data().descricao,
-          preco: doc.data().preco,
-          imagemUrl: doc.data().imagemUrl,
-          categoriaId: doc.data().categoriaId.trim(),
+          nome: doc.data().nome || '',
+          descricao: doc.data().descricao || '',
+          preco: Number(doc.data().preco) || 0,
+          imagemUrl: doc.data().imagemUrl || '',
+          categoriaId: doc.data().categoriaId?.trim() || 'todos',
         }));
 
         if (produtosFirebase.length > 0) {
@@ -186,7 +186,7 @@ export default function CardapioScreen() {
 
   const produtosFiltrados = produtos.filter((p) => {
     const matchCategoria = categoriaAtiva === 'todos' || p.categoriaId === categoriaAtiva;
-    const matchBusca = p.nome.toLowerCase().includes(busca.toLowerCase());
+    const matchBusca = p.nome?.toLowerCase().includes(busca.toLowerCase());
     return matchCategoria && matchBusca;
   });
 
@@ -213,7 +213,7 @@ export default function CardapioScreen() {
   };
 
   const iniciarAnimacao = (imagemUrl: string) => {
-    setAnimImage(imagemUrl);
+    setAnimImage(imagemUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=300&q=80');
     setIsAnimating(true);
     animY.setValue(0);
     animScale.setValue(1);
@@ -269,7 +269,7 @@ export default function CardapioScreen() {
         </View>
 
         <View style={styles.produtoRodape}>
-          <Text style={styles.produtoPreco}>R$ {item.preco.toFixed(2)}</Text>
+          <Text style={styles.produtoPreco}>R$ {Number(item.preco || 0).toFixed(2)}</Text>
           <TouchableOpacity style={styles.btnAdd} onPress={() => handleAdicionarAoPedido(item)}>
             <Text style={styles.btnAddText}>+</Text>
           </TouchableOpacity>
@@ -353,7 +353,7 @@ export default function CardapioScreen() {
               <Text style={styles.modalNome}>{produtoSelecionado?.nome}</Text>
               <Text style={styles.modalDescricaoInfo}>{produtoSelecionado?.descricao || 'Sem descrição disponível.'}</Text>
               <View style={styles.modalRodapeInfo}>
-                <Text style={styles.modalPrecoInfo}>R$ {produtoSelecionado?.preco?.toFixed(2)}</Text>
+                <Text style={styles.modalPrecoInfo}>R$ {Number(produtoSelecionado?.preco || 0).toFixed(2)}</Text>
                 <TouchableOpacity
                   style={styles.btnAdicionarModal}
                   onPress={() => {

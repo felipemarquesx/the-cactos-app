@@ -172,11 +172,11 @@ export default function HomeScreen() {
 
         const produtosFirebase = snapshot.docs.map(doc => ({
           id: doc.id,
-          nome: doc.data().nome,
-          descricao: doc.data().descricao,
-          preco: doc.data().preco,
-          imagemUrl: doc.data().imagemUrl,
-          categoriaId: doc.data().categoriaId?.trim(),
+          nome: doc.data().nome || '',
+          descricao: doc.data().descricao || '',
+          preco: Number(doc.data().preco) || 0,
+          imagemUrl: doc.data().imagemUrl || '',
+          categoriaId: doc.data().categoriaId?.trim() || 'todos',
         }));
 
         if (produtosFirebase.length > 0) {
@@ -257,7 +257,7 @@ export default function HomeScreen() {
   };
 
   const iniciarAnimacao = (imagemUrl: string) => {
-    setAnimImage(imagemUrl);
+    setAnimImage(imagemUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=300&q=80');
     setIsAnimating(true);
     animY.setValue(0);
     animScale.setValue(1);
@@ -296,7 +296,7 @@ export default function HomeScreen() {
   };
 
   const destaquesFiltrados = busca
-    ? destaques.filter((d: Destaque) => d.nome.toLowerCase().includes(busca.toLowerCase()))
+    ? destaques.filter((d: Destaque) => d.nome?.toLowerCase().includes(busca.toLowerCase()))
     : destaques;
 
   const renderDestaque = ({ item }: { item: Destaque }) => (
@@ -309,7 +309,7 @@ export default function HomeScreen() {
       <View style={styles.cardBody}>
         <Text style={styles.cardNome} numberOfLines={2}>{item.nome}</Text>
         <View style={styles.cardRodape}>
-          <Text style={styles.cardPreco}>R$ {item.preco.toFixed(2)}</Text>
+          <Text style={styles.cardPreco}>R$ {Number(item.preco || 0).toFixed(2)}</Text>
           <View style={styles.cardAvaliacaoRow}>
             <Text style={styles.starIcon}>★</Text>
             <Text style={styles.cardAvaliacao}>{item.avaliacao.toFixed(1)}</Text>
@@ -442,7 +442,7 @@ export default function HomeScreen() {
               <Text style={styles.modalNome}>{produtoSelecionado?.nome}</Text>
               <Text style={styles.modalDescricaoInfo}>{produtoSelecionado?.descricao || 'Sem descrição disponível.'}</Text>
               <View style={styles.modalRodapeInfo}>
-                <Text style={styles.modalPrecoInfo}>R$ {produtoSelecionado?.preco?.toFixed(2)}</Text>
+                <Text style={styles.modalPrecoInfo}>R$ {Number(produtoSelecionado?.preco || 0).toFixed(2)}</Text>
                 <TouchableOpacity
                   style={styles.btnAdicionarModal}
                   onPress={() => {
